@@ -1,0 +1,7 @@
+[
+	{
+		"name": "test server",
+		"desc": "My test server",
+		"pid_file": "/home/jeremy/Desktop/Projects/svmon/test.pid"
+	}
+]
