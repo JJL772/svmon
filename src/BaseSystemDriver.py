@@ -15,7 +15,8 @@ class BaseSystemDriver(svmon.BaseDriver):
 	def collect(self, json: dict) -> bool:
 		sys_info = {}
 		sys_info["operating_system"] = platform.system()
-		sys_info["processor"] = platform.uname().machine
+		sys_info["processor"] = platform.processor()
+		sys_info["arch"] = platform.uname().machine
 		sys_info["node"] = platform.uname().node
 		sys_info["os_ver"] = platform.release()
 		sys_info["num_cpus"] = int(psutil.cpu_count())

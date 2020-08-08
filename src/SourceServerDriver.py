@@ -1,6 +1,7 @@
 # Driver for Source Engine servers
 import ServerMonitor as svmon
-import json, os, platform, psutil, datetime
+import json, os, platform, psutil, datetime, subprocess
+from valve.rcon import RCON 
 
 class SourceServer():
 	def __init__(self):
@@ -17,6 +18,8 @@ class SourceServer():
 		self.pid_file = ''
 		self.desc = ''
 		self.name = ''
+		self.rcon_port = 0
+		self.rcon_pass = ''
 
 	def clear(self):
 		self.memory_percent = self.memory_used = self.memory_virtual = 0
@@ -42,6 +45,13 @@ class SourceServer():
 		ret['name'] = self.name
 		ret['create_time_nice'] = datetime.datetime.fromtimestamp(self.create_time).strftime('%Y-%m-%d %H:%M:%S')
 		return ret 
+
+	def run_rcon_command(self, args: str) -> str:
+		with RCON(('localhost', self.rcon_port), self.rcon_pass) as rcon:
+			return rcon(args)
+			
+	def collect_rcon_info(self):
+		print(self.run_rcon_command('status'))
 		
 
 class SourceServerDriver(svmon.BaseDriver):
@@ -68,9 +78,11 @@ class SourceServerDriver(svmon.BaseDriver):
 				srv.pid_file = server['pid_file']
 				srv.name = server['name']
 				srv.desc = server['desc']
+				srv.rcon_port = int(server['rcon_port'])
+				srv.rcon_pass = str(server['rcon_pass'])
 				self.servers.append(srv)
 		except:
-			svmon.error('Malformed config: /etc/svmon/source_servers.json')
+			svmon.error('Malformed config: /etc/svmon/source_servers.json. Stack trace:')
 			raise
 
 	def collect(self, json: dict) -> bool:
@@ -86,6 +98,8 @@ class SourceServerDriver(svmon.BaseDriver):
 					# Try to read the PID from the pid file
 					with open(server.pid_file, 'r') as fp:
 						server.pid = int(fp.readline())
+					# First collect some rcon data
+					server.collect_rcon_info()
 					# try to open the PID
 					proc = psutil.Process(pid=server.pid)
 					procinfo = proc.as_dict()
@@ -102,7 +116,7 @@ class SourceServerDriver(svmon.BaseDriver):
 						server.memory_used += procinfo['memory_full_info'].uss
 						server.memory_virtual += procinfo['memory_info'].vms
 				except:
-					pass
+					raise
 				server_info.append(server.to_dict())
 		except:
 			return False
@@ -111,4 +125,4 @@ class SourceServerDriver(svmon.BaseDriver):
 
 	def should_run(self) -> bool:
 		# only run if the config actually exists 
-		return os.path.exists('/etc/svmon/source_servers.json') 
+		return os.path.exists('/etc/svmon/source_servers.json')

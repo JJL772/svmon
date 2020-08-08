@@ -1,7 +1,10 @@
 [
 	{
+		"enable": true,
 		"name": "test server",
 		"desc": "My test server",
-		"pid_file": "/home/jeremy/Desktop/Projects/svmon/test.pid"
+		"pid_file": "/home/jeremy/Desktop/Projects/svmon/test.pid",
+		"rcon_port": 27015,
+		"rcon_pass": "password123"
 	}
 ]
